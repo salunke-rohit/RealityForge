@@ -1,12 +1,22 @@
 import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+
+import authRoutes from './routes/authRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
+
+dotenv.config();
 
 const app = express();
-const port = 5000 ;
 
-app.get ("/" , ( req, res)=>{
-    res.send("hello rohit the greate ");
-})
+app.use(cors());
+app.use(express.json());
 
-app.listen(port , ()=>{
-    console.log(`app is listen on port ${port}`)
-})
+app.use('/api/auth', authRoutes);
+app.use('/api', searchRoutes);
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
