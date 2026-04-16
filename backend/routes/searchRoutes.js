@@ -1,9 +1,9 @@
-import express from 'express';
-import { saveSearch, getHistory } from '../controllers/searchController.js';
+import express from 'express'
+import { saveSearch, getHistory } from '../controllers/searchController.js'
 
-const router = express.Router();
+const router = express.Router()
 
-router.post('/search', saveSearch);
-router.get('/history/:user_id', getHistory);
+router.post('/search', saveSearch)
+router.get('/history/:user_id', getHistory)
 
-export default router;
+export default router
