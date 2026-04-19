@@ -37,7 +37,17 @@ function Auth() {
   password: form.password
           }
 
-      const res = await axios.post(url, payload)
+     const res = await axios.post(url, payload);
+
+if (isLogin) {
+  const userData = {
+    id: res.data.user.id,
+    email: res.data.user.email,
+    token: res.data.session.access_token // ✅ FIXED
+  };
+
+  localStorage.setItem("user", JSON.stringify(userData));
+}
 
       if (isLogin) {
         const userData = {

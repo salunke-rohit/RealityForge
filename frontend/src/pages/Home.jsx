@@ -1,61 +1,71 @@
-import { useState, useEffect } from "react"
-import axios from "axios"
-import "../styles/home.css"
+import { useState, useEffect } from "react";
+import axios from "axios";
+import "../styles/home.css";
 
 function Home({ user }) {
-  const [query, setQuery] = useState("")
-  const [messages, setMessages] = useState([])
-  const [history, setHistory] = useState([])
+  const [query, setQuery] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [history, setHistory] = useState([]);
 
-  //  SAFE SPEAK
+  // SAFE SPEAK
   const speak = (text) => {
-    if (!text || typeof text !== "string") return
+    if (!text || typeof text !== "string") return;
 
     try {
-      const speech = new SpeechSynthesisUtterance(text)
-      window.speechSynthesis.cancel()
-      window.speechSynthesis.speak(speech)
+      const speech = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(speech);
     } catch (e) {
-      console.log("Speech error:", e)
+      console.log("Speech error:", e);
     }
-  }
-//  LOAD HISTORY
+  };
+
+  // 🔴 TOKEN CHECK (VERY IMPORTANT)
+  const getToken = () => {
+    if (!user || !user.token) {
+      console.log("❌ TOKEN MISSING:", user);
+      return null;
+    }
+    return user.token;
+  };
+
+  // LOAD HISTORY
   const loadHistory = async () => {
     try {
+      const token = getToken();
+      if (!token) return;
+
       const res = await axios.get(
         "https://realityforge.onrender.com/api/history",
         {
           headers: {
-            Authorization: `Bearer ${user.token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         }
-      )
+      );
 
-      if (Array.isArray(res.data)) {
-        setHistory(res.data)
-      } else {
-        setHistory([])
-      }
-
+      setHistory(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.log("History Error:", err.response?.data || err.message)
-      setHistory([])
+      console.log("History Error:", err.response?.data || err.message);
+      setHistory([]);
     }
-  }
+  };
 
   useEffect(() => {
-    loadHistory()
-  }, [])
+    loadHistory();
+  }, []);
 
-  //  SEARCH (FULL SAFE VERSION)
+  // SEARCH
   const handleSearch = async () => {
-    if (!query.trim()) return
+    if (!query.trim()) return;
 
-    const userMsg = query
-    setQuery("")
+    const token = getToken();
+    if (!token) return;
 
-    // add user message instantly
-    setMessages(prev => [...prev, { role: "user", text: userMsg }])
+    const userMsg = query;
+    setQuery("");
+
+    setMessages((prev) => [...prev, { role: "user", text: userMsg }]);
 
     try {
       const res = await axios.post(
@@ -63,76 +73,63 @@ function Home({ user }) {
         { query: userMsg },
         {
           headers: {
-            Authorization: `Bearer ${user.token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         }
-      )
+      );
 
-      console.log("API RESPONSE:", res.data)
-
-      const aiText = res?.data?.response
+      const aiText = res?.data?.response;
 
       if (!aiText || typeof aiText !== "string") {
-        throw new Error("Invalid AI response")
+        throw new Error("Invalid AI response");
       }
 
-      // add AI message
-      setMessages(prev => [
-        ...prev,
-        { role: "ai", text: aiText }
-      ])
+      setMessages((prev) => [...prev, { role: "ai", text: aiText }]);
 
-      speak(aiText)
-      loadHistory()
+      speak(aiText);
+      loadHistory();
 
     } catch (err) {
-      console.log("FRONTEND ERROR:", err.response?.data || err.message)
+      console.log("FRONTEND ERROR:", err.response?.data || err.message);
 
-      const errorMsg = "Something went wrong. Try again."
+      const errorMsg = "Something went wrong. Try again.";
 
-      setMessages(prev => [
-        ...prev,
-        { role: "ai", text: errorMsg }
-      ])
+      setMessages((prev) => [...prev, { role: "ai", text: errorMsg }]);
 
-      speak(errorMsg)
+      speak(errorMsg);
     }
-  }
+  };
 
-  //  LOGOUT
+  // LOGOUT
   const logout = () => {
-    speak("Logging out")
+    speak("Logging out");
 
     setTimeout(() => {
-      localStorage.removeItem("user")
-      window.location.reload()
-    }, 500)
-  }
+      localStorage.removeItem("user");
+      window.location.reload();
+    }, 500);
+  };
 
   return (
     <div className="home">
 
-      {/* SIDEBAR */}
       <div className="sidebar">
         <div className="logo">🧿 RealityForge</div>
 
-        {history.map(item => (
+        {history.map((item) => (
           <div key={item.id} className="history-item">
             {item.query}
           </div>
         ))}
       </div>
 
-      {/* MAIN */}
       <div className="main">
 
-        {/* TOP BAR */}
         <div className="topbar">
-          <span>{user.email}</span>
+          <span>{user?.email}</span>
           <span className="logout" onClick={logout}>Logout</span>
         </div>
 
-        {/* CHAT */}
         <div className="chat">
           {messages.map((msg, i) => (
             <div key={i} className={`message ${msg.role}`}>
@@ -141,7 +138,6 @@ function Home({ user }) {
           ))}
         </div>
 
-        {/* INPUT */}
         <div className="input-area">
           <input
             value={query}
@@ -154,7 +150,7 @@ function Home({ user }) {
 
       </div>
     </div>
-  )
+  );
 }
 
-export default Home
+export default Home;
