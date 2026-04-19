@@ -1,5 +1,9 @@
 export const getAIResponse = async (query) => {
   try {
+    if (!query || query.trim() === "") {
+      return "Please enter a valid query"
+    }
+
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -9,32 +13,14 @@ export const getAIResponse = async (query) => {
         "X-Title": "RealityForge"
       },
       body: JSON.stringify({
-        model: "mistralai/ministral-8b-2512",
+        model: "openai/gpt-3.5-turbo",
         messages: [
           {
             role: "system",
-            content: `
-You are RealityForge AI.
-
-RealityForge is a platform that answers ONLY:
-- what-if scenarios
-- simulations
-- alternate realities
-- futuristic ideas
-
-STRICT RULES:
-1. If the query is related to above topics → generate creative RealityForge response.
-2. If NOT → reply ONLY:
-"This is RealityForge AI. Ask only what-if, simulation, or alternate reality questions."
-
-DO NOT:
-- explain grammar
-- correct sentences
-- act like normal chatbot
-- give general knowledge answers
-
-Stay in RealityForge mode only.
-`
+            content: `You are RealityForge AI.
+Answer ONLY what-if, simulation, alternate reality questions.
+Otherwise reply:
+"This is RealityForge AI. Ask only what-if, simulation, or alternate reality questions."`
           },
           {
             role: "user",
@@ -44,19 +30,36 @@ Stay in RealityForge mode only.
       })
     })
 
-    const text = await res.text()
-    console.log("RAW RESPONSE:", text)
-
-    const data = JSON.parse(text)
-
-    if (!res.ok) {
-      return data?.error?.message || "API failed"
+    let data
+    try {
+      data = await res.json()
+    } catch {
+      console.log("❌ Response not JSON")
+      return "AI response error"
     }
 
-    return data?.choices?.[0]?.message?.content || "No response"
+    
+
+    if (!res.ok) {
+      console.log("❌ AI ERROR:", data)
+      return data?.error?.message || "AI service unavailable"
+    }
+
+    // ✅ FINAL FIX
+    const aiText = data?.choices?.[0]?.message?.content
+
+    if (!aiText) {
+      console.log("❌ No AI content found:", data)
+      return "No response"
+    }
+if (process.env.NODE_ENV === "development") {
+  console.log("AI RESPONSE:", data)
+}
+
+    return aiText
 
   } catch (err) {
-    console.error("FETCH ERROR:", err)
-    return "Fetch failed"
+    console.log("❌ FETCH ERROR:", err)
+    return "AI Error"
   }
 }
