@@ -1,65 +1,83 @@
-import supabase from "../config/supabase.js"
+import supabase from "../config/supabase.js";
 
-// SIGNUP
+// ================= SIGNUP =================
 export const signup = async (req, res) => {
   try {
-    const { username, email, password } = req.body
+    const { username, email, password } = req.body;
 
+    // 1. Validation
     if (!username || !email || !password) {
-      return res.status(400).json({ error: "All fields required" })
+      return res.status(400).json({ error: "All fields required" });
     }
 
-    // check username exists
-    const { data: existing } = await supabase
+    // 2. Check username already exists
+    const { data: existingUser, error: userError } = await supabase
       .from("users")
       .select("username")
       .eq("username", username)
-      .single()
+      .maybeSingle();
 
-    if (existing) {
-      return res.status(400).json({ error: "Username already taken" })
+    if (existingUser) {
+      return res.status(400).json({ error: "Username already taken" });
     }
 
+    // 3. Signup with Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email,
-      password
-    })
+      password,
+    });
 
-    if (error) return res.status(400).json({ error: error.message })
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
 
-    const user = data.user
+    const user = data.user;
 
-await supabase.from("users").insert([
-  {
-    id: user.id,
-    email: user.email,
-    username
-  }
-])
+    if (!user) {
+      return res.status(400).json({ error: "Signup failed" });
+    }
 
-    res.json({
+    // 4. Insert into custom users table
+    const { error: insertError } = await supabase.from("users").insert([
+      {
+        id: user.id,
+        email: user.email,
+        username,
+      },
+    ]);
+
+    if (insertError) {
+      console.log("DB INSERT ERROR:", insertError.message);
+    }
+
+    return res.status(200).json({
       message: "Signup successful",
       user: {
         id: user.id,
-        email
-      }
-    })
+        email: user.email,
+      },
+    });
 
   } catch (err) {
-    res.status(500).json({ error: "Server error" })
+    console.log("SIGNUP ERROR:", err);
+    return res.status(500).json({ error: "Server error" });
   }
-}
+};
 
-// LOGIN
+// ================= LOGIN =================
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log("LOGIN DATA:", email, password); // debug
+    // 1. Validation
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email & Password required" });
+    }
 
+    // 2. Login with Supabase
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: email.trim(),
+      password: password.trim(),
     });
 
     if (error) {
@@ -67,22 +85,35 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    res.json({
+    if (!data.session) {
+      return res.status(400).json({ error: "Login failed" });
+    }
+
+    return res.status(200).json({
+      message: "Login successful",
       user: data.user,
       token: data.session.access_token,
     });
 
   } catch (err) {
-    console.log("SERVER ERROR:", err);
-    res.status(500).json({ error: "Server error" });
+    console.log("LOGIN SERVER ERROR:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 };
 
+// ================= LOGOUT =================
 export const logout = async (req, res) => {
   try {
-    await supabase.auth.signOut();
-    res.json({ message: "Logged out" });
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    return res.status(200).json({ message: "Logged out successfully" });
+
   } catch (err) {
-    res.status(500).json({ error: "Logout failed" });
+    console.log("LOGOUT ERROR:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 };
