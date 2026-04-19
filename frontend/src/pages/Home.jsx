@@ -7,26 +7,15 @@ function Home({ user }) {
   const [messages, setMessages] = useState([]);
   const [history, setHistory] = useState([]);
 
-  // SAFE SPEAK
   const speak = (text) => {
-    if (!text || typeof text !== "string") return;
-
-    try {
-      const speech = new SpeechSynthesisUtterance(text);
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(speech);
-    } catch (e) {
-      console.log("Speech error:", e);
-    }
+    if (!text) return;
+    const speech = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(speech);
   };
 
-  // 🔴 TOKEN CHECK (VERY IMPORTANT)
   const getToken = () => {
-    if (!user || !user.token) {
-      console.log("❌ TOKEN MISSING:", user);
-      return null;
-    }
-    return user.token;
+    return user?.token || null;
   };
 
   // LOAD HISTORY
@@ -39,15 +28,15 @@ function Home({ user }) {
         "https://realityforge.onrender.com/api/history",
         {
           headers: {
-            Authorization: `Bearer ${token}`,
-          },
+            Authorization: `Bearer ${token}`
+          }
         }
       );
 
       setHistory(Array.isArray(res.data) ? res.data : []);
+
     } catch (err) {
       console.log("History Error:", err.response?.data || err.message);
-      setHistory([]);
     }
   };
 
@@ -65,7 +54,7 @@ function Home({ user }) {
     const userMsg = query;
     setQuery("");
 
-    setMessages((prev) => [...prev, { role: "user", text: userMsg }]);
+    setMessages(prev => [...prev, { role: "user", text: userMsg }]);
 
     try {
       const res = await axios.post(
@@ -73,41 +62,35 @@ function Home({ user }) {
         { query: userMsg },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
-          },
+            Authorization: `Bearer ${token}`
+          }
         }
       );
 
-      const aiText = res?.data?.response;
+      // ✅ backend response fix
+      const aiText = res.data.response || "Saved successfully";
 
-      if (!aiText || typeof aiText !== "string") {
-        throw new Error("Invalid AI response");
-      }
-
-      setMessages((prev) => [...prev, { role: "ai", text: aiText }]);
+      setMessages(prev => [
+        ...prev,
+        { role: "ai", text: aiText }
+      ]);
 
       speak(aiText);
       loadHistory();
 
     } catch (err) {
-      console.log("FRONTEND ERROR:", err.response?.data || err.message);
+      console.log("Search Error:", err.response?.data || err.message);
 
-      const errorMsg = "Something went wrong. Try again.";
-
-      setMessages((prev) => [...prev, { role: "ai", text: errorMsg }]);
+      const errorMsg = "Something went wrong";
+      setMessages(prev => [...prev, { role: "ai", text: errorMsg }]);
 
       speak(errorMsg);
     }
   };
 
-  // LOGOUT
   const logout = () => {
-    speak("Logging out");
-
-    setTimeout(() => {
-      localStorage.removeItem("user");
-      window.location.reload();
-    }, 500);
+    localStorage.removeItem("user");
+    window.location.reload();
   };
 
   return (
@@ -116,10 +99,8 @@ function Home({ user }) {
       <div className="sidebar">
         <div className="logo">🧿 RealityForge</div>
 
-        {history.map((item) => (
-          <div key={item.id} className="history-item">
-            {item.query}
-          </div>
+        {history.map(item => (
+          <div key={item.id}>{item.query}</div>
         ))}
       </div>
 
@@ -127,14 +108,12 @@ function Home({ user }) {
 
         <div className="topbar">
           <span>{user?.email}</span>
-          <span className="logout" onClick={logout}>Logout</span>
+          <button onClick={logout}>Logout</button>
         </div>
 
         <div className="chat">
           {messages.map((msg, i) => (
-            <div key={i} className={`message ${msg.role}`}>
-              {msg.text}
-            </div>
+            <div key={i}>{msg.text}</div>
           ))}
         </div>
 
@@ -143,9 +122,8 @@ function Home({ user }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="Ask something..."
           />
-          <button onClick={handleSearch}>➤</button>
+          <button onClick={handleSearch}>Send</button>
         </div>
 
       </div>

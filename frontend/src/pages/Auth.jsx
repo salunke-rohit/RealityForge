@@ -1,75 +1,69 @@
-import { useState } from "react"
-import axios from "axios"
-import "../styles/auth.css"
+import { useState } from "react";
+import axios from "axios";
+import "../styles/auth.css";
 
 function Auth() {
-  const [isLogin, setIsLogin] = useState(true)
+  const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({
     username: "",
     identifier: "",
     password: ""
-  })
+  });
 
   const speak = (text) => {
-    const speech = new SpeechSynthesisUtterance(text)
-    window.speechSynthesis.cancel()
-    window.speechSynthesis.speak(speech)
-  }
+    const speech = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(speech);
+  };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async () => {
     try {
       const url = isLogin
-  ? "https://realityforge.onrender.com/api/auth/login"
-  : "https://realityforge.onrender.com/api/auth/signup";
+        ? "https://realityforge.onrender.com/api/auth/login"
+        : "https://realityforge.onrender.com/api/auth/signup";
 
       const payload = isLogin
         ? {
-  email: form.identifier,
-  password: form.password
-}
+            email: form.identifier,
+            password: form.password
+          }
         : {
             username: form.username,
-           email: form.identifier,
-  password: form.password
-          }
+            email: form.identifier,
+            password: form.password
+          };
 
-     const res = await axios.post(url, payload);
+      const res = await axios.post(url, payload);
 
-if (isLogin) {
-  const userData = {
-    id: res.data.user.id,
-    email: res.data.user.email,
-    token: res.data.session.access_token // ✅ FIXED
-  };
-
-  localStorage.setItem("user", JSON.stringify(userData));
-}
-
+      // ✅ LOGIN
       if (isLogin) {
         const userData = {
           id: res.data.user.id,
           email: res.data.user.email,
-          username: res.data.user.user_metadata?.username || "User",
-          token: res.data.session.access_token
-        }
+          token: res.data.token   // ✅ CORRECT
+        };
 
-        localStorage.setItem("user", JSON.stringify(userData))
-        speak("Login successful")
+        localStorage.setItem("user", JSON.stringify(userData));
 
-        setTimeout(() => window.location.reload(), 800)
-      } else {
-        speak("Signup successful")
-        setIsLogin(true)
+        speak("Login successful");
+
+        setTimeout(() => window.location.reload(), 800);
+      } 
+      // ✅ SIGNUP
+      else {
+        speak("Signup successful");
+        setIsLogin(true);
       }
 
     } catch (err) {
-      speak(err.response?.data?.error || "Authentication failed")
+      console.log("AUTH ERROR:", err.response?.data || err.message);
+      speak(err.response?.data?.error || "Authentication failed");
     }
-  }
+  };
 
   return (
     <div className="auth-container">
@@ -87,7 +81,7 @@ if (isLogin) {
 
         <input
           name="identifier"
-          placeholder="Email or Username"
+          placeholder="Email"
           onChange={handleChange}
         />
 
@@ -108,7 +102,7 @@ if (isLogin) {
 
       </div>
     </div>
-  )
+  );
 }
 
-export default Auth
+export default Auth;
