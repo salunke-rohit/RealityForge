@@ -55,9 +55,7 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: "All fields required" });
-    }
+    console.log("LOGIN DATA:", email, password); // debug
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -65,6 +63,7 @@ export const login = async (req, res) => {
     });
 
     if (error) {
+      console.log("LOGIN ERROR:", error.message);
       return res.status(400).json({ error: error.message });
     }
 
@@ -74,6 +73,7 @@ export const login = async (req, res) => {
     });
 
   } catch (err) {
+    console.log("SERVER ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 };
