@@ -23,12 +23,12 @@ function Auth() {
   const handleSubmit = async () => {
     try {
       const url = isLogin
-  ? "http://localhost:5000/api/auth/login"
-  : "http://localhost:5000/api/auth/signup";
-  
+  ? "https://realityforge.onrender.com/api/auth/login"
+  : "https://realityforge.onrender.com/api/auth/signup";
+
       const payload = isLogin
         ? {
-            identifier: form.identifier,
+            email: form.identifier,
             password: form.password
           }
         : {
