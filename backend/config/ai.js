@@ -9,7 +9,7 @@ export const getAIResponse = async (query) => {
       headers: {
         "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:5000",
+        "HTTP-Referer": "https://realityforge.onrender.com",
         "X-Title": "RealityForge"
       },
       body: JSON.stringify({
@@ -34,22 +34,21 @@ Otherwise reply:
     try {
       data = await res.json()
     } catch {
-      console.log("❌ Response not JSON")
+      console.log(" Response not JSON")
       return "AI response error"
     }
 
     
 
     if (!res.ok) {
-      console.log("❌ AI ERROR:", data)
+      console.log(" AI ERROR:", data)
       return data?.error?.message || "AI service unavailable"
     }
 
-    // ✅ FINAL FIX
     const aiText = data?.choices?.[0]?.message?.content
 
     if (!aiText) {
-      console.log("❌ No AI content found:", data)
+      console.log(" No AI content found:", data)
       return "No response"
     }
 if (process.env.NODE_ENV === "development") {
@@ -59,7 +58,7 @@ if (process.env.NODE_ENV === "development") {
     return aiText
 
   } catch (err) {
-    console.log("❌ FETCH ERROR:", err)
+    console.log(" FETCH ERROR:", err)
     return "AI Error"
   }
 }
