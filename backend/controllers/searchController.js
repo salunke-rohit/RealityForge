@@ -1,56 +1,110 @@
 import supabase from "../config/supabase.js";
 
-// AUTH HELPER (IMPORTANT)
-const getUserFromToken = async (token) => {
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error || !data.user) return null;
-  return data.user;
+// ================= HELPER =================
+const getUserFromToken = async (req) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) return null;
+
+  const token = authHeader.split(" ")[1];
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(token);
+
+  if (error || !user) return null;
+
+  return user;
 };
 
-// CREATE SEARCH
+// ================= CREATE SEARCH =================
 export const createSearch = async (req, res) => {
   try {
     const { query } = req.body;
 
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ error: "No token" });
+    if (!query) {
+      return res.status(400).json({ error: "Query required" });
+    }
 
-    const token = authHeader.split(" ")[1];
+    const user = await getUserFromToken(req);
 
-    const user = await getUserFromToken(token);
-    if (!user) return res.status(401).json({ error: "Authentication failed" });
+    if (!user) {
+      return res.status(401).json({ error: "Authentication failed" });
+    }
 
-    await supabase.from("searches").insert([
+    const { error } = await supabase.from("searches").insert([
       {
         user_id: user.id,
         query,
-        response: "AI response here"
-      }
+        response: "AI response here", // later replace with AI
+      },
     ]);
 
-    res.json({ message: "Saved" });
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: "Search saved successfully" });
 
   } catch (err) {
+    console.log("CREATE ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 };
 
-// HISTORY
+// ================= GET HISTORY =================
 export const getHistory = async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    const user = await getUserFromToken(token);
+    const user = await getUserFromToken(req);
 
-    if (!user) return res.status(401).json({ error: "Auth failed" });
+    if (!user) {
+      return res.status(401).json({ error: "Authentication failed" });
+    }
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("searches")
       .select("*")
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
 
     res.json(data);
 
-  } catch {
+  } catch (err) {
+    console.log("HISTORY ERROR:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// ================= DELETE SEARCH =================
+export const deleteSearch = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await getUserFromToken(req);
+
+    if (!user) {
+      return res.status(401).json({ error: "Authentication failed" });
+    }
+
+    const { error } = await supabase
+      .from("searches")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id); // 🔥 IMPORTANT (security)
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ message: "Deleted successfully" });
+
+  } catch (err) {
+    console.log("DELETE ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 };
