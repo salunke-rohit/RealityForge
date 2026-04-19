@@ -28,13 +28,13 @@ function Auth() {
 
       const payload = isLogin
         ? {
-            email: form.identifier,
-            password: form.password
-          }
+  email: form.identifier,
+  password: form.password
+}
         : {
             username: form.username,
-            email: form.identifier,
-            password: form.password
+           email: form.identifier,
+  password: form.password
           }
 
       const res = await axios.post(url, payload)
