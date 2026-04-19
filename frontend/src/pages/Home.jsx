@@ -23,7 +23,7 @@ function Home({ user }) {
   const loadHistory = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/history",
+        "https://realityforge.onrender.com/api/history",
         {
           headers: {
             Authorization: `Bearer ${user.token}`
