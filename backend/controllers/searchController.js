@@ -1,8 +1,6 @@
 import supabase from "../config/supabase.js";
 import { getAIResponse } from "../config/ai.js";
 
-const aiResponse = await getAIResponse(query);
-
 // ================= HELPER =================
 const getUserFromToken = async (req) => {
   const authHeader = req.headers.authorization;
@@ -26,7 +24,7 @@ export const createSearch = async (req, res) => {
   try {
     const { query } = req.body;
 
-    if (!query) {
+    if (!query || !query.trim()) {
       return res.status(400).json({ error: "Query required" });
     }
 
@@ -36,11 +34,15 @@ export const createSearch = async (req, res) => {
       return res.status(401).json({ error: "Authentication failed" });
     }
 
+    // 🔥 AI CALL (YAHI HOGA)
+    const aiResponse = await getAIResponse(query);
+
+    // SAVE TO DB
     const { error } = await supabase.from("searches").insert([
       {
         user_id: user.id,
         query,
-        response: "AI response here", // later replace with AI
+        response: aiResponse,
       },
     ]);
 
@@ -48,7 +50,11 @@ export const createSearch = async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    res.json({ message: "Search saved successfully" });
+    // 🔥 FRONTEND KO RESPONSE
+    res.json({
+      query,
+      response: aiResponse,
+    });
 
   } catch (err) {
     console.log("CREATE ERROR:", err);
@@ -98,7 +104,7 @@ export const deleteSearch = async (req, res) => {
       .from("searches")
       .delete()
       .eq("id", id)
-      .eq("user_id", user.id); // 🔥 IMPORTANT (security)
+      .eq("user_id", user.id);
 
     if (error) {
       return res.status(400).json({ error: error.message });
