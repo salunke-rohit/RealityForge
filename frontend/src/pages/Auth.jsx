@@ -23,9 +23,9 @@ function Auth() {
   const handleSubmit = async () => {
     try {
       const url = isLogin
-        ? "http://localhost:5000/api/auth/login"
-        : "http://localhost:5000/api/auth/signup"
-
+  ? "http://localhost:5000/api/auth/login"
+  : "http://localhost:5000/api/auth/signup";
+  
       const payload = isLogin
         ? {
             identifier: form.identifier,

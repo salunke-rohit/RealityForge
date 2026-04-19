@@ -7,7 +7,7 @@ function Home({ user }) {
   const [messages, setMessages] = useState([])
   const [history, setHistory] = useState([])
 
-  // 🔊 SAFE SPEAK
+  //  SAFE SPEAK
   const speak = (text) => {
     if (!text || typeof text !== "string") return
 
@@ -19,8 +19,7 @@ function Home({ user }) {
       console.log("Speech error:", e)
     }
   }
-
-  // 📜 LOAD HISTORY
+//  LOAD HISTORY
   const loadHistory = async () => {
     try {
       const res = await axios.get(
@@ -48,7 +47,7 @@ function Home({ user }) {
     loadHistory()
   }, [])
 
-  // 🔍 SEARCH (FULL SAFE VERSION)
+  //  SEARCH (FULL SAFE VERSION)
   const handleSearch = async () => {
     if (!query.trim()) return
 
@@ -60,7 +59,7 @@ function Home({ user }) {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/search",
+        "https://realityforge.onrender.com/api/search",
         { query: userMsg },
         {
           headers: {
@@ -100,7 +99,7 @@ function Home({ user }) {
     }
   }
 
-  // 🚪 LOGOUT
+  //  LOGOUT
   const logout = () => {
     speak("Logging out")
 
