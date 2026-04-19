@@ -77,3 +77,12 @@ export const login = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
+export const logout = async (req, res) => {
+  try {
+    await supabase.auth.signOut();
+    res.json({ message: "Logged out" });
+  } catch (err) {
+    res.status(500).json({ error: "Logout failed" });
+  }
+};
