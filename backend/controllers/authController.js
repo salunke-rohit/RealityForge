@@ -1,44 +1,37 @@
 import supabase from "../config/supabase.js";
 
-// ================= SIGNUP =================
+// SIGNUP
 export const signup = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // 1. Validation
     if (!username || !email || !password) {
       return res.status(400).json({ error: "All fields required" });
     }
 
-    // 2. Check username already exists
-    const { data: existingUser, error: userError } = await supabase
+    // username check
+    const { data: existing } = await supabase
       .from("users")
       .select("username")
       .eq("username", username)
       .maybeSingle();
 
-    if (existingUser) {
+    if (existing) {
       return res.status(400).json({ error: "Username already taken" });
     }
 
-    // 3. Signup with Supabase Auth
+    // signup
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
 
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
+    if (error) return res.status(400).json({ error: error.message });
 
     const user = data.user;
 
-    if (!user) {
-      return res.status(400).json({ error: "Signup failed" });
-    }
-
-    // 4. Insert into custom users table
-    const { error: insertError } = await supabase.from("users").insert([
+    // save extra data
+    await supabase.from("users").insert([
       {
         id: user.id,
         email: user.email,
@@ -46,35 +39,26 @@ export const signup = async (req, res) => {
       },
     ]);
 
-    if (insertError) {
-      console.log("DB INSERT ERROR:", insertError.message);
-    }
-
-    return res.status(200).json({
+    res.json({
       message: "Signup successful",
-      user: {
-        id: user.id,
-        email: user.email,
-      },
+      user,
     });
 
   } catch (err) {
-    console.log("SIGNUP ERROR:", err);
-    return res.status(500).json({ error: "Server error" });
+    console.log(err);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// ================= LOGIN =================
+// LOGIN
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Validation
     if (!email || !password) {
       return res.status(400).json({ error: "Email & Password required" });
     }
 
-    // 2. Login with Supabase
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password: password.trim(),
@@ -85,35 +69,24 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    if (!data.session) {
-      return res.status(400).json({ error: "Login failed" });
-    }
-
-    return res.status(200).json({
+    res.json({
       message: "Login successful",
       user: data.user,
-      token: data.session.access_token,
+      session: data.session, // IMPORTANT
     });
 
   } catch (err) {
-    console.log("LOGIN SERVER ERROR:", err);
-    return res.status(500).json({ error: "Server error" });
+    console.log(err);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// ================= LOGOUT =================
+// LOGOUT
 export const logout = async (req, res) => {
   try {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    return res.status(200).json({ message: "Logged out successfully" });
-
-  } catch (err) {
-    console.log("LOGOUT ERROR:", err);
-    return res.status(500).json({ error: "Server error" });
+    await supabase.auth.signOut();
+    res.json({ message: "Logged out" });
+  } catch {
+    res.status(500).json({ error: "Logout failed" });
   }
 };
