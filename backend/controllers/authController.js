@@ -53,55 +53,27 @@ await supabase.from("users").insert([
 // LOGIN
 export const login = async (req, res) => {
   try {
-    const { identifier, password } = req.body
+    const { email, password } = req.body;
 
-    if (!identifier || !password) {
-      return res.status(400).json({ error: "All fields required" })
-    }
-    
-let email = identifier
-
-console.log("LOGIN EMAIL:", email)
-
-    // username login
-    if (!identifier.includes("@")) {
-      const { data } = await supabase
-        .from("users")
-        .select("email")
-        .eq("username", identifier)
-        .single()
-
-      if (!data) {
-        return res.status(400).json({ error: "User not found" })
-      }
-
-      email = data.email
+    if (!email || !password) {
+      return res.status(400).json({ error: "All fields required" });
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      password
-    })
+      password,
+    });
 
-    if (error) return res.status(400).json({ error: error.message })
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
 
     res.json({
-      message: "Login successful",
       user: data.user,
-      session: data.session
-    })
+      token: data.session.access_token,
+    });
 
   } catch (err) {
-    res.status(500).json({ error: "Server error" })
+    res.status(500).json({ error: "Server error" });
   }
-}
-
-// LOGOUT
-export const logout = async (req, res) => {
-  try {
-    await supabase.auth.signOut()
-    res.json({ message: "Logged out" })
-  } catch {
-    res.status(500).json({ error: "Logout failed" })
-  }
-}
+};
